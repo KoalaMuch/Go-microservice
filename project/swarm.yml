@@ -1,0 +1,109 @@
+version: "3"
+
+services:
+  caddy:
+    image: asiaseek/micro-caddy:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy_config:/config
+
+  front-end:
+    image: asiaseek/front-end:1.0.6
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      BROKER_URL: "http://backend"
+
+  broker-service:
+    image: asiaseek/broker-service:1.0.0
+    ports:
+      - "8080:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  listener-service:
+    image: asiaseek/listener-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  authentication-service:
+    image: asiaseek/authentication-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "host=postgres user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+
+  logger-service:
+    image: asiaseek/logger-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  mailer-service:
+    image: asiaseek/mail-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MAIL_DOMAIN: localhost
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      MAIL_ENCRYPTION: none
+      FROM_NAME: "John Doe"
+      FROM_ADDRESS: "Jone.Doe@example.com"
+
+  rabbitmq:
+    image: "rabbitmq:3.9-alpine"
+    deploy:
+      mode: global
+
+  mailhog:
+    image: "jcalonso/mailhog:latest"
+    ports:
+      - "8025:8025"
+    deploy:
+      mode: global
+
+  mongo:
+    image: "mongo:4.2.17-bionic"
+    ports:
+      - "27017:27017"
+    deploy:
+      mode: global
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./db-data/mongo/:/data/db
+
+  postgres:
+    image: "postgres:latest"
+    ports:
+      - 5432:5432
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data/
+
+volumes:
+  caddy-data:
+    external: true
+  caddy_config:

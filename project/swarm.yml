@@ -14,7 +14,7 @@ services:
       - caddy_config:/config
 
   front-end:
-    image: asiaseek/front-end:1.0.6
+    image: asiaseek/front-end:1.0.7
     deploy:
       mode: replicated
       replicas: 1
